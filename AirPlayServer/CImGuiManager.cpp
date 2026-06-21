@@ -17,7 +17,6 @@ CImGuiManager::CImGuiManager()
 	, m_bShowUI(false)
 	, m_qualityPreset(QUALITY_BALANCED)
 	, m_targetFPS(60)
-	, m_bNeedSyncTabs(true)
 	, m_deviceVolume(0.5f)     // Default 50% (will be updated by device)
 	, m_localVolume(1.0f)      // Default 100% local volume
 	, m_bAutoAdjust(false)     // Auto-adjust off by default
@@ -184,6 +183,8 @@ void CImGuiManager::RenderHomeScreen(const char* deviceName, bool isConnected, c
 	float screenW = io.DisplaySize.x > 0 ? io.DisplaySize.x : 1920.0f;
 	float screenH = io.DisplaySize.y > 0 ? io.DisplaySize.y : 1080.0f;
 	float scale = m_dpiScale;
+	float settingsW = 220.0f * scale;
+	if (settingsW > screenW - 40.0f) settingsW = screenW - 40.0f;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(screenW, screenH), ImGuiCond_Always);
@@ -204,7 +205,8 @@ void CImGuiManager::RenderHomeScreen(const char* deviceName, bool isConnected, c
 	// Measure total content height to center it
 	float lineH = ImGui::GetTextLineHeightWithSpacing();
 	float inputH = ImGui::GetFrameHeight();
-	float totalContentH = lineH * 2.0f + 20.0f * scale + inputH + 60.0f * scale + lineH + lineH;
+	float settingsH = (lineH + inputH) * 2.0f + 14.0f * scale;
+	float totalContentH = lineH * 2.0f + 20.0f * scale + inputH + 36.0f * scale + settingsH + lineH + lineH;
 	float startY = (screenH - totalContentH) * 0.5f;
 	if (startY < 20.0f * scale) startY = 20.0f * scale;
 	ImGui::Dummy(ImVec2(0, startY));
@@ -265,6 +267,13 @@ void CImGuiManager::RenderHomeScreen(const char* deviceName, bool isConnected, c
 	}
 
 	ImGui::Dummy(ImVec2(0, 16.0f * scale));
+
+	ImGui::SetCursorPosX((screenW - settingsW) * 0.5f);
+	ImGui::BeginGroup();
+	RenderVideoSettings(labelColor, settingsW);
+	ImGui::EndGroup();
+
+	ImGui::Dummy(ImVec2(0, 12.0f * scale));
 
 	// ---- Hint ----
 	{
@@ -357,45 +366,7 @@ void CImGuiManager::RenderOverlay(bool* pShowUI, const char* deviceName, bool is
 	ImGui::Separator();
 	ImGui::Spacing();
 
-	// Quality preset selection
-	ImGui::TextColored(labelColor, "Quality");
-	if (ImGui::BeginTabBar("QualityTabs", ImGuiTabBarFlags_FittingPolicyResizeDown)) {
-		// Use m_bNeedSyncTabs as one-shot to select the saved preset on first render
-		ImGuiTabItemFlags goodFlags = (m_bNeedSyncTabs && m_qualityPreset == QUALITY_GOOD) ? ImGuiTabItemFlags_SetSelected : 0;
-		ImGuiTabItemFlags balancedFlags = (m_bNeedSyncTabs && m_qualityPreset == QUALITY_BALANCED) ? ImGuiTabItemFlags_SetSelected : 0;
-		ImGuiTabItemFlags fastFlags = (m_bNeedSyncTabs && m_qualityPreset == QUALITY_FAST) ? ImGuiTabItemFlags_SetSelected : 0;
-		m_bNeedSyncTabs = false;
-
-		if (ImGui::BeginTabItem("Good", NULL, goodFlags)) {
-			m_qualityPreset = QUALITY_GOOD;
-			ImGui::TextColored(labelColor, "Lanczos");
-			ImGui::EndTabItem();
-		}
-		if (ImGui::BeginTabItem("Balanced", NULL, balancedFlags)) {
-			m_qualityPreset = QUALITY_BALANCED;
-			ImGui::TextColored(labelColor, "Bilinear");
-			ImGui::EndTabItem();
-		}
-		if (ImGui::BeginTabItem("Fast", NULL, fastFlags)) {
-			m_qualityPreset = QUALITY_FAST;
-			ImGui::TextColored(labelColor, "Nearest");
-			ImGui::EndTabItem();
-		}
-		ImGui::EndTabBar();
-	}
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-
-	ImGui::TextColored(labelColor, "Frame Rate");
-	if (ImGui::RadioButton("30 FPS", m_targetFPS == 30)) {
-		m_targetFPS = 30;
-	}
-	ImGui::SameLine();
-	if (ImGui::RadioButton("60 FPS", m_targetFPS == 60)) {
-		m_targetFPS = 60;
-	}
+	RenderVideoSettings(labelColor, 160.0f * m_dpiScale);
 
 	ImGui::Spacing();
 	ImGui::Separator();
@@ -980,6 +951,37 @@ void CImGuiManager::RenderDisconnectMessage(const char* deviceName)
 
 	ImGui::End();
 	ImGui::PopStyleVar(2);
+}
+
+void CImGuiManager::RenderVideoSettings(const ImVec4& labelColor, float itemWidth)
+{
+	const char* qualityItems[] = {
+		"Good (Lanczos)",
+		"Balanced (Bilinear)",
+		"Fast (Nearest)"
+	};
+	int qualityIndex = (int)m_qualityPreset;
+	if (qualityIndex < 0 || qualityIndex > 2) {
+		qualityIndex = (int)QUALITY_BALANCED;
+	}
+
+	ImGui::TextColored(labelColor, "Quality");
+	ImGui::PushItemWidth(itemWidth);
+	if (ImGui::Combo("##QualityPreset", &qualityIndex, qualityItems, 3)) {
+		m_qualityPreset = (EQualityPreset)qualityIndex;
+	}
+	ImGui::PopItemWidth();
+
+	ImGui::Spacing();
+
+	const char* fpsItems[] = { "30 FPS", "60 FPS" };
+	int fpsIndex = (m_targetFPS == 30) ? 0 : 1;
+	ImGui::TextColored(labelColor, "Frame Rate");
+	ImGui::PushItemWidth(itemWidth);
+	if (ImGui::Combo("##TargetFPS", &fpsIndex, fpsItems, 2)) {
+		m_targetFPS = (fpsIndex == 0) ? 30 : 60;
+	}
+	ImGui::PopItemWidth();
 }
 
 const char* CImGuiManager::GetDeviceName() const

@@ -108,7 +108,6 @@ private:
 	// Quality preset
 	EQualityPreset m_qualityPreset;
 	int m_targetFPS;
-	bool m_bNeedSyncTabs;  // One-shot flag to sync tab selection on first overlay render
 
 	// Audio controls
 	float m_deviceVolume;        // Volume from AirPlay device (0.0 to 1.0)
@@ -120,4 +119,5 @@ private:
 	float m_dpiScale;            // System DPI scale factor (1.0 = 96dpi, 1.25 = 120dpi, etc.)
 
 	void SetupStyle();
+	void RenderVideoSettings(const ImVec4& labelColor, float itemWidth);
 };
