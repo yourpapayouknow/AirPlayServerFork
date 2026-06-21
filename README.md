@@ -8,10 +8,10 @@
 
 ## 快速安装
 
-1.前往[Release页面](https://github.com/yourpapayouknow/AirPlayServerFork/releases/latest)下载最新版压缩包。
-2.解压到任意文件夹。
-3.如果电脑没有安装Bonjour，请先安装[BonjourforWindows](https://support.apple.com/kb/DL999)。安装iTunes也会附带安装Bonjour。
-4.运行`AirPlayServer.exe`。
+1. 前往[Release页面](https://github.com/yourpapayouknow/AirPlayServerFork/releases/latest)下载最新版压缩包。
+2. 解压到任意文件夹。
+3. 如果电脑没有安装Bonjour，请先安装[BonjourforWindows](https://support.apple.com/kb/DL999)。安装iTunes也会附带安装Bonjour。
+4. 运行`AirPlayServer.exe`。
 5. 程序启动后会自动在局域网里广播AirPlay服务。如果Bonjour没有安装或服务没有运行，程序启动时会提示。
 
 ## 系统要求
