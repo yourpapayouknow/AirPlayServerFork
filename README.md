@@ -8,6 +8,12 @@
 
 ## 快速安装
 
+1. 复制仓库地址。
+2. 打开你的本地AGENT，粘贴地址给他并告诉“请帮我安装这个软件以及其依赖项”。
+3. 打开软件开始投屏。
+
+## 古法安装
+
 1. 前往[Release页面](https://github.com/yourpapayouknow/AirPlayServerFork/releases/latest)下载最新版压缩包。
 2. 解压到任意文件夹。
 3. 如果电脑没有安装Bonjour，请先安装[BonjourforWindows](https://support.apple.com/kb/DL999)。安装iTunes也会附带安装Bonjour。
