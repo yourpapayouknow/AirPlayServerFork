@@ -116,8 +116,11 @@ private:
 	float m_currentAudioLevel;   // Current audio level for meter display (0.0 to 1.0)
 
 	// DPI scaling
-	float m_dpiScale;            // System DPI scale factor (1.0 = 96dpi, 1.25 = 120dpi, etc.)
+	float m_dpiScale;            // Effective UI scale used by layout code
+	float m_nativeDpiScale;      // Windows monitor scale (1.0 = 96dpi, 1.25 = 120dpi, etc.)
+	float m_appliedStyleScale;   // Last scale applied to ImGui style sizes
 
 	void SetupStyle();
+	void UpdateUIScale();
 	void RenderVideoSettings(const ImVec4& labelColor, float itemWidth);
 };

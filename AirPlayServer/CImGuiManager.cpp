@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 CImGuiManager::CImGuiManager()
 	: m_bInitialized(false)
@@ -22,6 +23,8 @@ CImGuiManager::CImGuiManager()
 	, m_bAutoAdjust(false)     // Auto-adjust off by default
 	, m_currentAudioLevel(0.0f)
 	, m_dpiScale(1.0f)
+	, m_nativeDpiScale(1.0f)
+	, m_appliedStyleScale(1.0f)
 {
 	memset(m_deviceNameBuffer, 0, sizeof(m_deviceNameBuffer));
 }
@@ -53,14 +56,10 @@ bool CImGuiManager::Init(SDL_Window* window, SDL_Renderer* renderer)
 	// Configure font atlas for better quality
 	io.Fonts->TexGlyphPadding = 1;  // Padding between glyphs for crisp rendering
 
-	// Query system DPI for scaling UI elements and fonts
-	{
-		HDC hdc = GetDC(NULL);
-		int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-		ReleaseDC(NULL, hdc);
-		m_dpiScale = (float)dpi / 96.0f;
-		if (m_dpiScale < 1.0f) m_dpiScale = 1.0f;
-	}
+	m_nativeDpiScale = ImGui_ImplSDL2_GetContentScaleForWindow(window);
+	if (m_nativeDpiScale <= 0.0f) m_nativeDpiScale = 1.0f;
+	if (m_nativeDpiScale < 1.0f) m_nativeDpiScale = 1.0f;
+	m_dpiScale = m_nativeDpiScale;
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -68,6 +67,7 @@ bool CImGuiManager::Init(SDL_Window* window, SDL_Renderer* renderer)
 
 	// Scale all style sizes by DPI factor (padding, rounding, scrollbar, etc.)
 	ImGui::GetStyle().ScaleAllSizes(m_dpiScale);
+	m_appliedStyleScale = m_dpiScale;
 
 	// Initialize font and build font atlas
 	// Try to load fonts in order: Segoe UI Variable -> Segoe UI -> Arial -> Default
@@ -79,7 +79,7 @@ bool CImGuiManager::Init(SDL_Window* window, SDL_Renderer* renderer)
 		"C:\\Windows\\Fonts\\arial.ttf"          // Arial
 	};
 
-	float fontSize = 16.0f * m_dpiScale;  // Scale font to match system DPI
+	float fontSize = 16.0f * m_nativeDpiScale;  // Bake at native monitor DPI; window scale is applied live.
 
 	// Try each font path - check file existence first to avoid unnecessary errors
 	for (int i = 0; i < 4 && font == NULL; i++) {
@@ -155,6 +155,7 @@ void CImGuiManager::NewFrame()
 	ImGui_ImplSDLRenderer2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
+	UpdateUIScale();
 }
 
 void CImGuiManager::ProcessEvent(SDL_Event* event)
@@ -169,6 +170,35 @@ void CImGuiManager::ProcessEvent(SDL_Event* event)
 	// The SDL2 backend handles all input mapping automatically:
 	// mouse, keyboard, text input, mouse wheel, window events, etc.
 	ImGui_ImplSDL2_ProcessEvent(event);
+}
+
+void CImGuiManager::UpdateUIScale()
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	float windowScale = 1.0f;
+	if (io.DisplaySize.x > 0.0f && io.DisplaySize.y > 0.0f) {
+		float scaleX = io.DisplaySize.x / 640.0f;
+		float scaleY = io.DisplaySize.y / 480.0f;
+		windowScale = (scaleX < scaleY) ? scaleX : scaleY;
+		if (windowScale < 1.0f) windowScale = 1.0f;
+		if (windowScale > 1.75f) windowScale = 1.75f;
+	}
+
+	float targetScale = m_nativeDpiScale * windowScale;
+	if (targetScale < 1.0f) targetScale = 1.0f;
+
+	if (fabsf(targetScale - m_appliedStyleScale) > 0.01f) {
+		ImGui::StyleColorsDark();
+		SetupStyle();
+		ImGui::GetStyle().ScaleAllSizes(targetScale);
+		ImGui::GetStyle().FontScaleMain = windowScale;
+		m_appliedStyleScale = targetScale;
+		m_dpiScale = targetScale;
+	} else {
+		ImGui::GetStyle().FontScaleMain = windowScale;
+		m_dpiScale = targetScale;
+	}
 }
 
 void CImGuiManager::RenderHomeScreen(const char* deviceName, bool isConnected, const char* connectedDeviceName, bool isServerRunning)
