@@ -15,7 +15,8 @@ CImGuiManager::CImGuiManager()
 	, m_pRenderer(NULL)
 	, m_bEditingDeviceName(false)
 	, m_bShowUI(false)
-	, m_qualityPreset(QUALITY_BALANCED)  // Default to balanced (60fps, linear filtering)
+	, m_qualityPreset(QUALITY_BALANCED)
+	, m_targetFPS(60)
 	, m_bNeedSyncTabs(true)
 	, m_deviceVolume(0.5f)     // Default 50% (will be updated by device)
 	, m_localVolume(1.0f)      // Default 100% local volume
@@ -367,20 +368,33 @@ void CImGuiManager::RenderOverlay(bool* pShowUI, const char* deviceName, bool is
 
 		if (ImGui::BeginTabItem("Good", NULL, goodFlags)) {
 			m_qualityPreset = QUALITY_GOOD;
-			ImGui::TextColored(labelColor, "30fps, Lanczos");
+			ImGui::TextColored(labelColor, "Lanczos");
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Balanced", NULL, balancedFlags)) {
 			m_qualityPreset = QUALITY_BALANCED;
-			ImGui::TextColored(labelColor, "60fps, Bilinear");
+			ImGui::TextColored(labelColor, "Bilinear");
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Fast", NULL, fastFlags)) {
 			m_qualityPreset = QUALITY_FAST;
-			ImGui::TextColored(labelColor, "60fps, Nearest");
+			ImGui::TextColored(labelColor, "Nearest");
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	ImGui::TextColored(labelColor, "Frame Rate");
+	if (ImGui::RadioButton("30 FPS", m_targetFPS == 30)) {
+		m_targetFPS = 30;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("60 FPS", m_targetFPS == 60)) {
+		m_targetFPS = 60;
 	}
 
 	ImGui::Spacing();
@@ -988,6 +1002,9 @@ void CImGuiManager::LoadSettings(const char* iniPath)
 		m_qualityPreset = (EQualityPreset)preset;
 	}
 
+	int targetFPS = GetPrivateProfileIntA("General", "TargetFPS", 60, iniPath);
+	m_targetFPS = (targetFPS == 30) ? 30 : 60;
+
 	// Load overlay visibility (default: hidden)
 	int showUI = GetPrivateProfileIntA("General", "ShowOverlay", 0, iniPath);
 	m_bShowUI = (showUI != 0);
@@ -1013,6 +1030,10 @@ void CImGuiManager::SaveSettings(const char* iniPath)
 	char buf[16];
 	sprintf_s(buf, sizeof(buf), "%d", (int)m_qualityPreset);
 	WritePrivateProfileStringA("General", "QualityPreset", buf, iniPath);
+
+	char fpsBuf[16];
+	sprintf_s(fpsBuf, sizeof(fpsBuf), "%d", m_targetFPS);
+	WritePrivateProfileStringA("General", "TargetFPS", fpsBuf, iniPath);
 
 	// Save overlay visibility
 	WritePrivateProfileStringA("General", "ShowOverlay", m_bShowUI ? "1" : "0", iniPath);

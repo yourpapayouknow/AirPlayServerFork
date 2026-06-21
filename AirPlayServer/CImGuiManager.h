@@ -23,7 +23,7 @@ struct SPerfData
 	float frameTimeMs;
 	float latencyMs;
 	float bitrateMbps;
-	float targetFps;       // From quality preset (30 or 60)
+	float targetFps;       // Configured display FPS target
 
 	// Video
 	int videoWidth;
@@ -42,9 +42,9 @@ struct SPerfData
 // Quality presets for video rendering
 enum EQualityPreset
 {
-	QUALITY_GOOD = 0,      // 30fps, best filtering - maximum quality per frame
-	QUALITY_BALANCED = 1,  // 60fps, best filtering - smooth + high quality (default)
-	QUALITY_FAST = 2       // 60fps, linear filtering - lowest latency
+	QUALITY_GOOD = 0,      // Best filtering - maximum quality per frame
+	QUALITY_BALANCED = 1,  // Best filtering - smooth + high quality (default)
+	QUALITY_FAST = 2       // Linear filtering - lowest latency
 };
 
 class CImGuiManager
@@ -77,6 +77,7 @@ public:
 
 	// Get quality preset
 	EQualityPreset GetQualityPreset() const { return m_qualityPreset; }
+	int GetTargetFPS() const { return m_targetFPS; }
 
 	// Overlay visibility (persisted in settings)
 	bool IsOverlayVisible() const { return m_bShowUI; }
@@ -106,6 +107,7 @@ private:
 
 	// Quality preset
 	EQualityPreset m_qualityPreset;
+	int m_targetFPS;
 	bool m_bNeedSyncTabs;  // One-shot flag to sync tab selection on first overlay render
 
 	// Audio controls

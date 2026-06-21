@@ -402,6 +402,7 @@ void CSDLPlayer::loopEvents()
 	bool bShowUI = m_imgui.IsOverlayVisible();
 
 	EQualityPreset lastQualityPreset = (EQualityPreset)-1;  // Force initial preset application
+	int lastTargetFPS = 0;  // Force initial FPS target application
 
 	// Device name change debounce (restart server 1.5s after user stops typing)
 	char lastDeviceName[256] = { 0 };
@@ -655,6 +656,14 @@ void CSDLPlayer::loopEvents()
 			}
 		}
 
+		// Apply frame-rate target independently from the scaling quality preset
+		int currentTargetFPS = m_imgui.GetTargetFPS();
+		if (currentTargetFPS != lastTargetFPS) {
+			lastTargetFPS = currentTargetFPS;
+			m_targetFrameIntervalMs = (currentTargetFPS == 30) ? 33.333 : 16.667;
+			m_qpcLastNewFrame.QuadPart = 0;
+		}
+
 		// Apply quality preset as SDL render scale quality hint
 		EQualityPreset currentPreset = m_imgui.GetQualityPreset();
 		if (currentPreset != lastQualityPreset) {
@@ -662,15 +671,12 @@ void CSDLPlayer::loopEvents()
 			switch (currentPreset) {
 			case QUALITY_GOOD:
 				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
-				m_targetFrameIntervalMs = 33.333;  // 30fps - maximum quality per frame
 				break;
 			case QUALITY_BALANCED:
 				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
-				m_targetFrameIntervalMs = 16.667;  // 60fps - smooth + high quality
 				break;
 			case QUALITY_FAST:
 				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-				m_targetFrameIntervalMs = 16.667;  // 60fps - lowest latency
 				break;
 			}
 			// Recreate texture with new filter mode (hint only applies at texture creation)
