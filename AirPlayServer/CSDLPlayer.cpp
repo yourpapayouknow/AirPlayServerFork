@@ -527,6 +527,13 @@ void CSDLPlayer::loopEvents()
 							SDL_PIXELFORMAT_IYUV,
 							SDL_TEXTUREACCESS_STREAMING,
 							m_videoWidth, m_videoHeight);
+						if (m_videoTexture != NULL && m_yuvBuffer[0][0] != NULL) {
+							SDL_UpdateYUVTexture(m_videoTexture, NULL,
+								m_yuvBuffer[0][0], m_yuvPitch[0],
+								m_yuvBuffer[0][1], m_yuvPitch[1],
+								m_yuvBuffer[0][2], m_yuvPitch[2]);
+						}
+						m_qpcLastNewFrame.QuadPart = 0;
 
 						m_bResizing = false;
 					}
@@ -673,6 +680,13 @@ void CSDLPlayer::loopEvents()
 					SDL_PIXELFORMAT_IYUV,
 					SDL_TEXTUREACCESS_STREAMING,
 					m_videoWidth, m_videoHeight);
+				if (m_videoTexture != NULL && m_yuvBuffer[0][0] != NULL) {
+					SDL_UpdateYUVTexture(m_videoTexture, NULL,
+						m_yuvBuffer[0][0], m_yuvPitch[0],
+						m_yuvBuffer[0][1], m_yuvPitch[1],
+						m_yuvBuffer[0][2], m_yuvPitch[2]);
+				}
+				m_qpcLastNewFrame.QuadPart = 0;
 			}
 		}
 
@@ -697,7 +711,8 @@ void CSDLPlayer::loopEvents()
 			// 90% tolerance to avoid missing frames due to timing jitter
 			bool intervalReady = (msSinceLastNew >= m_targetFrameIntervalMs * 0.90);
 
-			if (intervalReady && InterlockedCompareExchange(&m_yuvReady, 0, 1) == 1) {
+			if (intervalReady && m_videoTexture != NULL &&
+				InterlockedCompareExchange(&m_yuvReady, 0, 1) == 1) {
 				LONG readIdx = InterlockedCompareExchange(&m_yuvReadIdx, 0, 0);
 				if (readIdx >= 0 && readIdx <= 1 &&
 					m_yuvBuffer[readIdx][0] != NULL && m_videoTexture != NULL) {
